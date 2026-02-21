@@ -7,8 +7,8 @@ public class ProgMainCertificate {
 
         int x = 10;
 
-       // System.out.println("c1: " + c1.getId() + " " + c1.getName());
-        // System.out.println("c2: " + c2.getId() + " " + c2.getName());
+//       System.out.println("c1: " + c1.getId() + " " + c1.getName());
+//       System.out.println("c2: " + c2.getId() + " " + c2.getName());
 
         c2 = c1;
         c2.setId(333);
@@ -29,6 +29,8 @@ public class ProgMainCertificate {
         eq = c1 == c3;
         System.out.println("c1 == c3 " + eq);
 
+//        boolean equals = c1.myCustomEquals(c3);
+//        System.out.println("c1 equals c3 " + equals);
         boolean equals = c1.equals(c3);
         System.out.println("c1 equals c3 " + equals);
     }

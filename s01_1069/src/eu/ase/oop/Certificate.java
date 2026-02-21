@@ -30,8 +30,16 @@ public class Certificate extends Object {
         return newCert;
     }
 
-    public boolean equals(Certificate cert) {
-        if(this.id == cert.getId() && this.name.equals(cert.getName())) {
+//    public boolean myCustomEquals(Certificate cert) {
+//        if(this.id == cert.getId() && this.name.equals(cert.getName())) {
+//            return true;
+//        }
+//        return false;
+//    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(this.id == ((Certificate) obj).getId() && this.name.equals(((Certificate) obj).getName())) {
             return true;
         }
         return false;
