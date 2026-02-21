@@ -1,6 +1,6 @@
 package eu.ase.oop;
 
-public class Certificate extends Object {
+public class Certificate /* extends Object */ {
     private int id;
     private String name;
 
