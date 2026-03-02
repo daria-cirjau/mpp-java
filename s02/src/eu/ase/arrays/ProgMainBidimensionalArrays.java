@@ -1,29 +1,40 @@
 package eu.ase.arrays;
 
 public class ProgMainBidimensionalArrays {
-    static void main(String[] args) {
-        int studentNo = 2; // liniile
-        int lectNo = 3; // coloane
 
-        short[][] studMarks = new short[][] { {5, 5, 9}, {9, 10, 9} };
-        // Linia 0 -> stud 0 -> {5, 5, 9}
-        // Linia 1 -> stud 1 -> {9, 10, 9}
+    public static void main(String[] args) {
+        // Vrem sa calculam media fiecarui student dintr-o clasa
+        // Avem 2 studenti si 3 discipline
 
-        float[] avgMarks = new float[studentNo];
+        int studentsNo = 2;
+        // numarul de studenti (linii)
 
-        for(int i = 0; i < studentNo; i ++) { // i < studMarks.length
-            avgMarks[i] = 0;
-            // parcurgem disciplinele
-            for(int j = 0; j < lectNo; j ++) { // j < studMarks[i].length
-                avgMarks[i] = avgMarks[i] + studMarks[i][j];
-                // avgMarks[i] += studMarks[i][j]
+        int lectNo = 3;
+        // numarul de discipline (coloane)
+
+        short[][] studentsMarksAtDisciplines = new short[][]{{5, 5, 9}, {9, 10, 9}};
+        /*
+         * Linia 0 -> studentul 0 -> {5, 5, 9}
+         * Linia 1 -> studentul 1 -> {9, 10, 9}
+         */
+
+        float[] avgStudMark = new float[studentsNo];
+        // Array unidimensional care tine media fiecarui student
+
+        for (int i = 0; i < studentsNo; i++) {
+
+            avgStudMark[i] = 0;
+            for (int j = 0; j < lectNo; j++) {
+
+                avgStudMark[i] += studentsMarksAtDisciplines[i][j];
             }
-            avgMarks[i] = avgMarks[i] / lectNo;
-            // avgMarks[i] /= lectNo;
+
+            avgStudMark[i] /= lectNo;
         }
 
-        for(int i = 0; i < studentNo; i ++) {
-            System.out.println("Student " + i + " avg " + avgMarks[i]);
+        // Afisam mediile
+        for (int i = 0; i < studentsNo; i++) {
+            System.out.println("The average mark for the student " + i + " is = " + avgStudMark[i]);
         }
     }
 }
