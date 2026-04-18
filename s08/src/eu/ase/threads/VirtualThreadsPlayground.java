@@ -1,26 +1,20 @@
-package eu.ase.multithreading;
+package eu.ase.threads;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-class VirtualThreadsPlayground {
-    // https://blog.rockthejvm.com/ultimate-guide-to-java-virtual-threads/
-    // MacOS - get CPU cores: sysctl hw.physicalcpu hw.logicalcpu
-    // Linux - get CPU: lscpu
-    // put in Run cofig: --enable-preview and Java 19
-
+public class VirtualThreadsPlayground {
     static int numberOfCores() {
         return Runtime.getRuntime().availableProcessors();
     }
 
-    static void concurrentMorningRoutineUsingExecutorsWithName() {
-        final ThreadFactory factory = Thread.ofVirtual().name("routine-", 0).factory();
-        try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
+    static void concurrentMorningRoutine() {
+        final ThreadFactory factory = Thread.ofVirtual().name("routine - ", 0).factory();
 
-            var bathTime = executor.submit(() -> {
-                // breakpoint here:
+        try(var executor = Executors.newThreadPerTaskExecutor(factory)) {
+            var bathTime  = executor.submit(() -> {
                 System.out.printf("\n %s - I'm going to take a bath", Thread.currentThread().getName());
                 try {
                     Thread.sleep(Duration.ofMillis(500L));
@@ -31,7 +25,6 @@ class VirtualThreadsPlayground {
             });
 
             var boilingWater = executor.submit(() -> {
-                // breakpoint here:
                 System.out.printf("\n %s - I'm going to boil some water", Thread.currentThread().getName());
                 try {
                     Thread.sleep(Duration.ofSeconds(1L));
@@ -42,13 +35,11 @@ class VirtualThreadsPlayground {
             });
 
             try {
-                // breakpoints here:
                 bathTime.get();
                 boilingWater.get();
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
-
         }
     }
 }

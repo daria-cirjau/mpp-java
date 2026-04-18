@@ -1,6 +1,10 @@
-package eu.ase.multithreading;
+package eu.ase.threads;
 
-class HelloRunnable /* extends OtherClass */ implements Runnable {
+public class HelloThread extends Thread {
+    public HelloThread(String name) {
+        super(name);
+    }
+
     @Override
     public void run() {
         String name = Thread.currentThread().getName();

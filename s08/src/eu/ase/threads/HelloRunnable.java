@@ -1,10 +1,6 @@
-package eu.ase.multithreading;
+package eu.ase.threads;
 
-class HelloThread extends Thread {
-
-    public HelloThread(String name) {
-        super(name);
-    }
+public class HelloRunnable implements Runnable {
 
     @Override
     public void run() {
@@ -12,4 +8,3 @@ class HelloThread extends Thread {
         System.out.println("Hello " + name);
     }
 }
-
