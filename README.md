@@ -12,6 +12,9 @@ s05/   Java I/O with primitive data and text files
 s06/   Object serialization, AutoCloseable, finally, and an early introduction to lambdas
 s07/   Java Streams API and functional-style data processing
 s08/   Threads, Runnable, ExecutorService, Future/Callable, synchronization, virtual threads
+s09/   Parallel array processing, ExecutorService, Callable/Future, ForkJoin, virtual threads
+s10/   UDP networking, DatagramSocket, DatagramPacket, UDP client-server, multicast
+s11/   TCP/HTTP programming, Java HttpClient, multithreaded HTTP server, Java NIO
 ```
 
 # Seminar 01 — Java project setup, classes, objects, references, copying, equality
@@ -577,6 +580,341 @@ This teaches the key idea of **mutual exclusion**: only one thread at a time is 
 * How `synchronized` protects shared data
 * Why virtual threads are important in newer Java versions
 
+# Seminar 09 — Parallel processing, `ExecutorService`, `Callable`/`Future`, ForkJoin, and virtual threads
+
+## Main goal
+
+This seminar continued the multithreading topic by comparing several ways to calculate the sum of a very large array. The focus was on understanding not only how to use threads, but also when parallelism helps and when thread overhead can make things slower.
+
+## What you learned
+
+### 1\. Sequential baseline
+
+We first computed the sum using a simple `for` loop. This gave us a baseline for comparing the multithreaded versions.
+
+### 2\. Concurrency versus parallelism
+
+Concurrency means multiple tasks are managed during the same period of time. Parallelism means multiple tasks actually run at the same time on different CPU cores.
+
+For the array sum problem, the goal was mainly parallelism.
+
+### 3\. `Runnable` and `Thread`
+
+We created `MyMultiThreadArray`, a worker class that implements `Runnable`.
+
+Each worker receives:
+
+* the array
+* a start index
+* a stop index
+
+It computes a partial sum for that interval.
+
+### 4\. Splitting work and using `join()`
+
+The array was split into equal chunks, one for each thread. After calling `start()`, the main thread used `join()` to wait for all workers to finish before reading their partial sums.
+
+This also avoided a race condition because each worker stored its own result, and the final sum was calculated only after all threads ended.
+
+### 5\. `ExecutorService`
+
+We then replaced manual thread creation with `ExecutorService`:
+
+```java
+Executors.newFixedThreadPool(NTHREADS)
+```
+
+Tasks were submitted to a thread pool, and the executor managed the worker threads.
+
+### 6\. `Callable` and `Future`
+
+Next, we used `Callable<Long>` with `MyCallableArray`.
+
+Unlike `Runnable`, a `Callable` can return a result. When submitted to an executor, it returns a `Future<Long>`.
+
+`future.get()` gives the result when it is ready, or waits if the task is still running.
+
+### 7\. ForkJoin
+
+The seminar introduced ForkJoin through `SumForkJoin`, which extends `RecursiveTask<Long>`.
+
+The array is split recursively:
+
+* small interval: compute directly
+* large interval: split into two subtasks
+* combine the two partial sums
+
+A threshold was used to avoid creating too many tiny tasks.
+
+### 8\. Virtual threads
+
+The last version used:
+
+```java
+Executors.newVirtualThreadPerTaskExecutor()
+```
+
+Virtual threads are lightweight threads managed by the JVM. 
+### 9\. Benchmarking caution
+
+Sometimes timing tests can be misleading because results depend on JVM warmup, JIT compilation, garbage collection, CPU load, memory/cache behavior, and the order in which tests run.
+
+## What to review after this seminar
+
+* Difference between concurrency and parallelism
+* Why multithreading has overhead
+* Difference between `Runnable` and `Callable`
+* Why `join()` is needed
+* What a `Future` represents
+* Why `ExecutorService` is useful
+* How ForkJoin uses divide et impera
+* What virtual threads are useful for
+
+# Seminar 10 — UDP networking, client-server communication, and multicast
+
+## Main goal
+
+This seminar introduced network programming in Java using UDP. We built a UDP server, a UDP client, and then looked at multicast communication.
+
+## What you learned
+
+### 1\. Basic networking concepts
+
+The seminar introduced:
+
+* IP address
+* port
+* socket
+
+The IP identifies the host, the port identifies the application on that host, and the socket is the communication endpoint.
+
+### 2\. UDP versus TCP
+
+UDP is connection-less. It sends datagrams without first establishing a connection.
+
+Compared to TCP, UDP is simpler and has lower overhead, but it does not guarantee that packets arrive, arrive once, or arrive in order.
+
+UDP is often used for DNS, streaming, gaming, multicast, and short low-latency messages.
+
+### 3\. `DatagramSocket` and `DatagramPacket`
+
+In Java UDP programming we used:
+
+* `DatagramSocket` for sending and receiving UDP packets
+* `DatagramPacket` for the actual datagram data
+
+Network data is handled as `byte[]`, so text must be converted to bytes before sending and converted back after receiving.
+
+### 4\. UDP server
+
+The server class was `UDPServer`, in package `eu.ase.udp`.
+
+It creates a `DatagramSocket` bound to port `7778`, then waits for packets using:
+
+```java
+socket.receive(packet);
+```
+
+`receive()` is blocking, so the server waits there until a packet arrives.
+
+### 5\. UDP client
+
+The client class was `UDPClient`.
+
+The client creates a socket, sends the message:
+
+```text
+What date & time is it?
+```
+
+to the server, waits for a response, prints it, and closes the socket.
+
+The server responds with the current date and time if it understands the message, otherwise with:
+
+```text
+I don't understand!
+```
+
+### 6\. UDP communication flow
+
+The flow is:
+
+1. server starts on port `7778`
+2. client sends a datagram to `127.0.0.1:7778`
+3. server receives the packet
+4. server checks the message
+5. server sends a response to the client address and port
+6. client receives and prints the response
+
+### 7\. Multicast
+
+Multicast means sending messages to a group, not to one specific client and not to the whole network.
+
+The multicast server sends timestamps to group:
+
+```text
+230.0.0.1
+```
+
+on port:
+
+```text
+4446
+```
+
+The multicast client uses `MulticastSocket`, joins the group with `joinGroup(...)`, receives messages, then leaves with `leaveGroup(...)`.
+
+## What to review after this seminar
+
+* Difference between UDP and TCP
+* What IP, port, and socket mean
+* What `DatagramSocket` and `DatagramPacket` do
+* Why UDP uses byte arrays
+* Why `receive()` is blocking
+* Why the server has a fixed port
+* Difference between unicast, multicast, and broadcast
+* How `joinGroup()` and `leaveGroup()` work
+
+# Seminar 11 — TCP, HTTP client/server programming, and Java NIO
+
+## Main goal
+
+This seminar moved from UDP to TCP and HTTP. We first used Java's `HttpClient`, then built a minimal HTTP server, and finally introduced Java NIO.
+
+## What you learned
+
+### 1\. From UDP to TCP
+
+TCP is connection-oriented. Before two applications exchange data, a connection is established.
+
+HTTP runs on top of TCP. A browser connects to a server, sends an HTTP request, and receives an HTTP response.
+
+### 2\. Java `HttpClient`
+
+In `ProgMainHttp2Client`, we used:
+
+* `HttpClient`
+* `HttpRequest`
+* `HttpResponse`
+* `CompletableFuture`
+
+A request was built with:
+
+```java
+HttpRequest.newBuilder()
+    .uri(...)
+    .GET()
+    .build()
+```
+
+We sent it synchronously with `send(...)` and asynchronously with `sendAsync(...)`.
+
+### 3\. Synchronous versus asynchronous requests
+
+`send(...)` blocks until the response is received.
+
+`sendAsync(...)` returns a `CompletableFuture`, which represents a response that will be available later.
+
+### 4\. Minimal HTTP server
+
+The server package was `eu.ase.httpserver`.
+
+The main class was `HTTPMultiServer`, which uses `ServerSocket` to listen on a port, for example `10001`.
+
+The server waits for clients using:
+
+```java
+serverSocket.accept();
+```
+
+`accept()` is blocking and returns a `Socket` for the connected client.
+
+### 5\. One thread per client
+
+For each browser connection, the server creates an `HTTPMultiServerThread`.
+
+This thread reads the HTTP request from the client socket and sends the HTTP response back.
+
+### 6\. Reading and processing HTTP requests
+
+A simple browser request looks like:
+
+```text
+GET /indextest.html HTTP/1.1
+```
+
+The server extracts the requested file name, such as:
+
+```text
+indextest.html
+```
+
+Then `HTTPSeminarProtocol` builds the response.
+
+This separates socket communication from HTTP processing.
+
+### 7\. HTTP response
+
+If the file exists, the server responds with:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: ...
+
+HTML content
+```
+
+If the file is missing, it returns a simple `404` response. The HTML file must be placed in the working directory.
+
+### 8\. Java NIO
+
+The final part introduced Java NIO, which uses:
+
+* Channel
+* Buffer
+* Selector
+
+Classic I/O usually uses blocking streams. NIO can use non-blocking channels and a selector to monitor multiple connections with one thread.
+
+### 9\. NIO server and client
+
+The NIO server was `ProgMainServerNio`.
+
+It uses:
+
+* `Selector`
+* `ServerSocketChannel`
+* `SocketChannel`
+* `SelectionKey`
+* `ByteBuffer`
+
+The selector detects when a channel is ready to accept a new connection or read data.
+
+The NIO client, `ProgMainClientNio`, connects to `127.0.0.1:8989` and sends messages like:
+
+* Facebook
+* Twitter
+* IBM
+* Google
+
+When the server receives `"Google"`, it closes that client connection but keeps the server running.
+
+## What to review after this seminar
+
+* Difference between UDP and TCP
+* Why TCP is connection-oriented
+* How HTTP runs over TCP
+* Difference between `send()` and `sendAsync()`
+* What `ServerSocket` and `Socket` do
+* Why `accept()` is blocking
+* Why `start()` is different from `run()`
+* Basic HTTP request and response structure
+* What `Content-Type` and `Content-Length` mean
+* What Java NIO is
+* What Channel, Buffer, Selector, and `SelectionKey` do
+* Difference between blocking and non-blocking communication
+
 # How the seminars build on each other
 
 Each seminar prepares the next one.
@@ -589,4 +927,6 @@ Each seminar prepares the next one.
 6. **S06** upgrades file work to object serialization and introduces lambdas.
 7. **S07** uses lambdas in the Streams API.
 8. **S08** introduces concurrent execution and more advanced modern Java features.
-
+9. **S09** compares different parallel processing models.
+10. **S10** introduces UDP networking and multicast.
+11. **S11** moves to TCP, HTTP, and Java NIO.
